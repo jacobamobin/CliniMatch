@@ -1,0 +1,92 @@
+YOU WILL BUILD THIS
+
+Project Title: TerraMind
+
+Inspiration
+At TerraHacks, we wanted to explore how technology can nurture healthier minds and deeper self-awareness, especially in an increasingly overstimulated and disconnected world. Traditional journaling and mental health apps often focus on just text entries, missing out on the richness of human expression through video, audio, and facial cues. We asked: what if self-reflection could be truly multi-sensory, adaptive, and personal?
+
+That’s why we created TerraMind — a multimodal emotional journaling companion designed to help users process their thoughts and emotions across video, audio, and text. By using AI to understand both verbal and nonverbal expression, TerraMind helps users surface emotional patterns, recognize burnout signals, and rediscover balance.
+
+What It Does
+TerraMind transforms traditional journaling into an immersive emotional processing experience:
+
+Video & Audio Diaries: Users can record reflections, rants, or check-ins. TerraMind analyzes facial expressions, vocal tone, and speech to detect stress, joy, fatigue, and other emotional states.
+
+Emotion Timeline & Heatmap: Entries are segmented and mapped onto a dynamic timeline that reveals emotional intensity changes. Mood heatmaps over time help visualize highs and lows.
+
+Reflective Playback: Users can rewatch or re-listen to key moments with overlays showing detected emotion, voice tone, and reflection prompts.
+
+Smart Tagging & Insights: Each entry is automatically tagged with emotions and themes (e.g., "frustration about work," "conflict avoidance," "hopefulness") using LLM-powered semantic clustering.
+
+Calendar-Based Reflection: All entries live on an interactive emotional calendar, allowing users to spot patterns like weekend stress or mid-week burnout.
+
+How We Built It
+TerraMind fuses AI and emotional analytics into a lightweight, powerful journaling tool:
+
+Frontend: Built with React, Tailwind, and FramerMotion for smooth transitions and a modern, glassmorphic interface that feels calm and private.
+
+Backend: Python + FastAPI for handling media uploads, orchestrating AI pipelines, and returning emotion-rich insights.
+
+AI Stack:
+
+Gemini API to analyze text and transcripts, detect emotional subtext, and categorize reflections.
+
+Facial emotion recognition models to analyze visual expressions in video.
+
+Audio sentiment analysis to capture tone and nonverbal stress markers.
+
+Database: Supabase handles user authentication via Google Cloud Sign-In and stores encrypted video/audio/text data securely.
+
+Challenges We Faced
+
+Temporal Emotion Alignment: Syncing emotional analysis across video, audio, and transcript data was complex.
+
+User Feedback Tone: It took time to strike the right tone—supportive and neutral, never judgmental.
+
+Media Storage Optimization: Managing performance and cost for uploading and storing large media files while keeping the experience fast.
+
+Accomplishments We're Proud Of
+
+Created a unique multimodal journaling experience that respects privacy, emphasizes emotion over data, and enables deeper introspection.
+
+Built AI pipelines that truly understand nonverbal cues across video and audio—not just written text.
+
+Designed a calming, elegant interface that encourages daily engagement.
+
+What We Learned
+
+How to layer emotion detection techniques across modalities.
+
+How to balance UX design with complex data feedback in a way that enhances rather than overwhelms.
+
+How to work with real-time video and audio analysis pipelines.
+
+What’s Next for TerraMind
+
+Therapy-Ready Exports: Allow users to generate summaries of emotional trends to bring to a therapist.
+
+Custom Mood Models: Let users train TerraMind to recognize their personal emotion patterns.
+
+Offline Journaling Mode: Journal offline and sync later to prioritize privacy.
+
+Daily Mindfulness Challenges: Personalized prompts based on detected patterns and emotional states.
+
+Built With
+
+React
+
+TailwindCSS
+
+FramerMotion
+
+Python
+
+FastAPI
+
+Gemini API
+
+Supabase
+
+Google Cloud
+
+Note: Landing page will be built last—we focused entirely on crafting a functional, healing experience firs
