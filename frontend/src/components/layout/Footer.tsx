@@ -48,7 +48,7 @@ const Footer: React.FC = () => {
               For support or questions about clinical trials
             </p>
             <p className="text-blue-300 text-sm mt-1">
-              support@clinimatch.com
+              jacobamobin@gmail.com
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="border-t border-blue-400/20 mt-8 pt-6 text-center">
           <p className="text-blue-300 text-sm">
-            © 2024 CliniMatch. All rights reserved. This tool is for informational purposes only and does not constitute medical advice.
+            © 2025 Jacob Mobin. All rights reserved. This tool is for informational purposes only and does not constitute medical advice.
           </p>
         </div>
       </div>

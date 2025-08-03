@@ -51,7 +51,7 @@ const LandingPage: React.FC = () => {
     {
       icon: <FaDatabase className="w-8 h-8" />,
       title: "ClinicalTrials.gov API",
-      description: "We query the official ClinicalTrials.gov database with over 400,000 studies using advanced search parameters."
+      description: "We query the official ClinicalTrials.gov database with over 500,000 studies using advanced search parameters."
     },
     {
       icon: <FaFilter className="w-8 h-8" />,
@@ -91,21 +91,20 @@ const LandingPage: React.FC = () => {
     ],
     ai: [
       { name: "Google Gemini", icon: <FaBrain className="w-6 h-6" />, description: "AI translation" },
-      { name: "Natural Language", icon: <FaLanguage className="w-6 h-6" />, description: "Text processing" },
       { name: "Context Analysis", icon: <FaFlask className="w-6 h-6" />, description: "Medical understanding" }
     ],
     data: [
       { name: "Supabase", icon: <SiSupabase className="w-6 h-6" />, description: "Database & Auth" },
       { name: "PostgreSQL", icon: <SiPostgresql className="w-6 h-6" />, description: "Relational database" },
       { name: "ClinicalTrials.gov", icon: <FaGlobe className="w-6 h-6" />, description: "Official trial data" },
-      { name: "OpenStreetMap", icon: <FaMapMarkedAlt className="w-6 h-6" />, description: "Geocoding service" }
+      { name: "Google Geocoding API", icon: <FaMapMarkedAlt className="w-6 h-6" />, description: "Geocoding service" }
     ]
   };
 
   const apis = [
     {
       name: "ClinicalTrials.gov API",
-      description: "Official FDA database containing 400,000+ clinical studies worldwide",
+      description: "Official FDA database containing 500,000+ clinical studies worldwide",
       features: ["Real-time data", "Comprehensive search", "Study details", "Location information"]
     },
     {
@@ -119,8 +118,8 @@ const LandingPage: React.FC = () => {
       features: ["User authentication", "Data caching", "Real-time updates", "Secure storage"]
     },
     {
-      name: "OpenStreetMap Nominatim",
-      description: "Free geocoding service for converting addresses to coordinates",
+      name: "Google Geocoding API",
+      description: "Googles geocoding service for converting addresses to coordinates",
       features: ["Global coverage", "Address resolution", "Coordinate mapping", "Location services"]
     }
   ];
@@ -442,7 +441,7 @@ const LandingPage: React.FC = () => {
           <div className="glass-card-dark p-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
               <motion.div variants={itemVariants}>
-                <div className="text-4xl font-bold text-blue-400 mb-2">400K+</div>
+                <div className="text-4xl font-bold text-blue-400 mb-2">547K+</div>
                 <div className="text-blue-300">Clinical Trials</div>
               </motion.div>
               <motion.div variants={itemVariants}>
