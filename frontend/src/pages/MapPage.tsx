@@ -101,7 +101,7 @@ const MapPage: React.FC = () => {
     'Kidney Disease', 'Liver Disease', 'Obesity', 'Hypertension', 'COPD'
   ];
 
-  // Geocoding function using Google Geocoding API
+  // Enhanced geocoding function for worldwide locations
   const geocodeLocation = async (city: string, state: string, country: string): Promise<[number, number] | null> => {
     const cacheKey = `${city},${state},${country}`;
     
@@ -113,7 +113,7 @@ const MapPage: React.FC = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
       
-      const locationQuery = `${city}, ${state}, ${country}`;
+      const locationQuery = `${city}, ${state}, ${country}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',');
       const apiKey = process.env.REACT_APP_GOOGLE_GEOCODING_API_KEY;
       
       if (!apiKey) {
@@ -132,10 +132,14 @@ const MapPage: React.FC = () => {
         const { lat, lng } = data.results[0].geometry.location;
         const coords: [number, number] = [lat, lng];
         geocodingCache.current.set(cacheKey, coords);
+        console.log(`Geocoded: "${locationQuery}" -> ${lat}, ${lng}`);
         return coords;
+      } else {
+        console.warn(`Geocoding failed for: "${locationQuery}" - Status: ${data.status}`);
       }
     } catch (error) {
-      console.warn('Geocoding failed for:', city, state, error);
+      const queryString = `${city}, ${state}, ${country}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',');
+      console.warn('Geocoding failed for:', queryString, error);
     }
     return null;
   };
@@ -211,18 +215,35 @@ const MapPage: React.FC = () => {
     processLocations();
   }, [matches, selectedCondition, filterStatus]);
 
-  // Handle search by location
+  // Enhanced worldwide location search
   const handleLocationSearch = async () => {
     if (!searchQuery.trim()) return;
     
     setIsGeocoding(true);
-    const coords = await geocodeLocation(searchQuery, '', 'United States');
-    if (coords) {
-      setMapCenter(coords);
-      setMapZoom(10);
-    } else {
-      alert('Location not found. Please try a different search term.');
+    
+    try {
+      // Try direct search first (handles cities, states, provinces, countries)
+      const coords = await geocodeLocation(searchQuery, '', '');
+      
+      if (coords) {
+        setMapCenter(coords);
+        // Adjust zoom based on search specificity
+        const query = searchQuery.toLowerCase();
+        if (query.includes('city') || query.includes(',')) {
+          setMapZoom(10); // City level
+        } else if (query.includes('state') || query.includes('province') || query.includes('territory')) {
+          setMapZoom(7); // State/Province level
+        } else {
+          setMapZoom(5); // Country level
+        }
+      } else {
+        alert(`Location "${searchQuery}" not found. Please try:\n• A country name (e.g., "Canada")\n• A state/province (e.g., "California" or "Ontario")\n• A city (e.g., "Toronto" or "Sydney")\n• A specific address`);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Search failed. Please check your internet connection and try again.');
     }
+    
     setIsGeocoding(false);
   };
 
@@ -280,25 +301,69 @@ const MapPage: React.FC = () => {
           <div className="glass-card p-4 rounded-xl">
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
               <FaSearch className="text-blue-400" />
-              Search Location
+              Search Location Worldwide
             </h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter city, state, or address..."
-                className="glass-input-dark flex-1 px-3 py-2 rounded-lg text-white placeholder-slate-400"
-                onKeyPress={(e) => e.key === 'Enter' && handleLocationSearch()}
-              />
-              <button
-                onClick={handleLocationSearch}
-                disabled={isGeocoding || !searchQuery.trim()}
-                className="glass-button px-4 py-2 rounded-lg text-blue-400 disabled:opacity-50"
-              >
-                {isGeocoding ? <FaSpinner className="animate-spin" /> : <FaSearch />}
-              </button>
+            
+            <div className="space-y-3">
+              {/* Main Search Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter city, state, province, territory, or country..."
+                  className="glass-input-dark flex-1 px-3 py-2 rounded-lg text-white placeholder-slate-400"
+                  onKeyPress={(e) => e.key === 'Enter' && handleLocationSearch()}
+                />
+                <button
+                  onClick={handleLocationSearch}
+                  disabled={isGeocoding || !searchQuery.trim()}
+                  className="glass-button px-4 py-2 rounded-lg text-blue-400 disabled:opacity-50"
+                >
+                  {isGeocoding ? <FaSpinner className="animate-spin" /> : <FaSearch />}
+                </button>
+              </div>
+
+              {/* Quick Location Examples */}
+              <div className="text-xs text-slate-400">
+                <p className="mb-2">Examples:</p>
+                <div className="grid grid-cols-1 gap-1">
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      'California, USA',
+                      'Ontario, Canada', 
+                      'New South Wales, Australia',
+                      'Bavaria, Germany',
+                      'Tokyo, Japan',
+                      'São Paulo, Brazil'
+                    ].map((example, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSearchQuery(example);
+                          setTimeout(() => handleLocationSearch(), 100);
+                        }}
+                        className="text-blue-400 hover:text-blue-300 hover:underline text-xs"
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Search Tips */}
+              <div className="bg-slate-800/30 p-3 rounded-lg">
+                <h4 className="text-white text-xs font-semibold mb-2">🌍 Worldwide Search Tips:</h4>
+                <ul className="text-xs text-slate-400 space-y-1">
+                  <li>• <strong>Countries:</strong> "Canada", "Australia", "United Kingdom"</li>
+                  <li>• <strong>States/Provinces:</strong> "California", "Ontario", "Queensland"</li>
+                  <li>• <strong>Cities:</strong> "Toronto", "Sydney", "London"</li>
+                  <li>• <strong>Specific:</strong> "Los Angeles, California" or "Toronto, Ontario, Canada"</li>
+                </ul>
+              </div>
             </div>
+            
             <div className="mt-3">
               <LocationControl onLocationFound={handleUserLocation} />
             </div>
