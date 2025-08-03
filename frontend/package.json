@@ -1,6 +1,7 @@
 {
-  "name": "frontend",
+  "name": "clinimatch",
   "version": "0.1.0",
+  "description": "CliniMatch - AI-powered clinical trial matching platform",
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",

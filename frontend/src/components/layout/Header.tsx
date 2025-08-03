@@ -37,11 +37,27 @@ const Header: React.FC = () => {
           {/* Logo */}
           <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-3">
             <motion.div
-              className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center"
+              className="rounded-lg flex items-center justify-center overflow-hidden"
+              style={{ width: '52px', height: '52px' }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-white font-bold text-lg">CM</span>
+              <img 
+                src="/CliniMatch.png" 
+                alt="CliniMatch Logo" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-full h-full bg-blue-600 rounded-lg items-center justify-center text-white font-bold text-lg hidden"
+              >
+                CM
+              </div>
             </motion.div>
             <div>
               <h1 className="text-xl font-bold text-white">CliniMatch</h1>
