@@ -53,9 +53,9 @@ function App() {
                   <Route path="/map" element={<MapPage />} />
                   <Route path="/search/:method" element={<ProfilePage />} />
                 </Routes>
-              </main>
+        </main>
               <Footer />
-            </div>
+      </div>
           </Router>
         </TrialProvider>
       </ThemeProvider>

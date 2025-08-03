@@ -32,21 +32,76 @@ interface LocationWithCoords {
   coordinates?: [number, number];
 }
 
-// Geocoding function
-const geocodeLocation = async (city: string, state: string, country: string): Promise<[number, number] | null> => {
+// Geocoding function using Google Geocoding API (reliable, fast)
+const geocodeLocation = async (city: string, state: string, country: string, retryCount = 0): Promise<[number, number] | null> => {
+  const maxRetries = 2;
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
   try {
+    // Rate limiting - 50 requests per second allowed by Google
+    await delay(100);
+    
     const locationQuery = `${city}, ${state}, ${country}`;
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationQuery)}&limit=1&addressdetails=1`
-    );
-    const data = await response.json();
-    if (data && data.length > 0) {
-      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    // Use Google Geocoding API
+    const apiKey = process.env.REACT_APP_GOOGLE_GEOCODING_API_KEY;
+    if (!apiKey) {
+      console.error('Google Geocoding API key not found in environment variables');
+      return null;
     }
+    
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationQuery)}&key=${apiKey}`,
+      { 
+        signal: controller.signal,
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      const result = data.results[0];
+      if (result.geometry && result.geometry.location) {
+        const { lat, lng } = result.geometry.location;
+        console.log(`Geocoded: ${city}, ${state} -> ${lat}, ${lng}`);
+        return [lat, lng];
+      }
+    } else if (data.status === 'OVER_QUERY_LIMIT') {
+      console.warn(`Google API quota exceeded for: ${city}, ${state}`);
+      throw new Error('API quota exceeded');
+    } else if (data.status === 'ZERO_RESULTS') {
+      console.warn(`No results found for: ${city}, ${state}`);
+      return null;
+    } else {
+      console.warn(`Geocoding failed with status: ${data.status} for: ${city}, ${state}`);
+      return null;
+    }
+    
+    return null;
   } catch (error) {
-    console.warn('Geocoding failed for:', { city, state, country }, error);
+    console.warn(`Geocoding attempt ${retryCount + 1} failed for: ${city}, ${state}`, error);
+    
+    if (retryCount < maxRetries) {
+      const waitTime = 1000 * (retryCount + 1); // Linear backoff
+      console.warn(`Geocoding retry ${retryCount + 1}/${maxRetries} for: ${city}, ${state} in ${waitTime}ms`);
+      await delay(waitTime);
+      return geocodeLocation(city, state, country, retryCount + 1);
+    }
+    
+    console.error('Geocoding failed after all retries:', { city, state, country }, error);
+    return null;
   }
-  return null;
 };
 
 // Mini Map Component
@@ -54,14 +109,21 @@ const TrialMiniMap: React.FC<{ locations: LocationWithCoords[]; trialTitle: stri
   const [locationsWithCoords, setLocationsWithCoords] = useState<LocationWithCoords[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>([39.8283, -98.5795]); // Center of US
+  const [currentlyGeocoding, setCurrentlyGeocoding] = useState<string>('');
+  const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 });
 
   const geocodeLocations = useCallback(async () => {
     if (!locations.length) return;
     
     setIsLoading(true);
+    setGeocodingProgress({ current: 0, total: locations.length });
     const geocodedLocations: LocationWithCoords[] = [];
     
-    for (const location of locations) {
+    for (let i = 0; i < locations.length; i++) {
+      const location = locations[i];
+      setCurrentlyGeocoding(`${location.city}, ${location.state}`);
+      setGeocodingProgress({ current: i + 1, total: locations.length });
+      
       const coords = await geocodeLocation(location.city, location.state, location.country);
       if (coords) {
         geocodedLocations.push({
@@ -69,12 +131,11 @@ const TrialMiniMap: React.FC<{ locations: LocationWithCoords[]; trialTitle: stri
           coordinates: coords
         });
       }
-      // Small delay to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     setLocationsWithCoords(geocodedLocations);
     setIsLoading(false);
+    setCurrentlyGeocoding('');
     
     // Set map center to first location or average of all locations
     if (geocodedLocations.length > 0) {
@@ -125,10 +186,24 @@ const TrialMiniMap: React.FC<{ locations: LocationWithCoords[]; trialTitle: stri
 
   if (isLoading) {
     return (
-      <div className="h-48 bg-slate-800/30 rounded-lg flex items-center justify-center border border-blue-400/20">
-        <div className="flex items-center gap-2 text-blue-300">
+      <div className="h-48 bg-slate-800/30 rounded-lg flex flex-col items-center justify-center border border-blue-400/20 p-4">
+        <div className="flex items-center gap-2 text-blue-300 mb-3">
           <FaSpinner className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Mapping {locations.length} location{locations.length !== 1 ? 's' : ''}...</span>
+          <span className="text-sm">Mapping locations...</span>
+        </div>
+        
+        <div className="w-full bg-slate-700 rounded-full h-2 mb-2">
+          <div 
+            className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+            style={{ width: `${(geocodingProgress.current / geocodingProgress.total) * 100}%` }}
+          ></div>
+        </div>
+        
+        <div className="text-xs text-blue-400 text-center">
+          <div>Processing {geocodingProgress.current} of {geocodingProgress.total}</div>
+          {currentlyGeocoding && (
+            <div className="mt-1 text-blue-300">📍 {currentlyGeocoding}</div>
+          )}
         </div>
       </div>
     );
@@ -136,10 +211,20 @@ const TrialMiniMap: React.FC<{ locations: LocationWithCoords[]; trialTitle: stri
 
   if (locationsWithCoords.length === 0) {
     return (
-      <div className="h-48 bg-slate-800/30 rounded-lg flex items-center justify-center border border-blue-400/20">
-        <div className="text-center text-blue-300">
+      <div className="h-48 bg-slate-800/30 rounded-lg border border-blue-400/20 p-4">
+        <div className="text-center text-blue-300 mb-4">
           <FaMapMarkerAlt className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No locations could be mapped</p>
+          <p className="text-sm">Map unavailable - showing location list</p>
+        </div>
+        
+        {/* Fallback: Show locations as a list */}
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {locations.map((location, idx) => (
+            <div key={idx} className="bg-slate-700/50 p-2 rounded text-xs">
+              <div className="font-medium text-white">{location.facility}</div>
+              <div className="text-blue-300">{location.city}, {location.state}</div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -180,13 +265,36 @@ const TrialMiniMap: React.FC<{ locations: LocationWithCoords[]; trialTitle: stri
           </Marker>
         ))}
       </MapContainer>
+      
+      {/* Show count of mapped vs total locations */}
+      {locationsWithCoords.length < locations.length && (
+        <div className="absolute bottom-2 right-2 bg-slate-800/90 text-xs text-blue-300 px-2 py-1 rounded">
+          {locationsWithCoords.length}/{locations.length} mapped
+        </div>
+      )}
     </div>
   );
 };
 
 const MatchCard: React.FC<TrialCardProps> = ({ trial, userState }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [sortedLocations, setSortedLocations] = useState<LocationWithCoords[]>([]);
+
+  // Sort locations by user's state
+  useEffect(() => {
+    if (!trial.locations || trial.locations.length === 0) return;
+    
+    const sorted = [...trial.locations].sort((a, b) => {
+      const aIsUserState = a.state?.toUpperCase() === userState?.toUpperCase();
+      const bIsUserState = b.state?.toUpperCase() === userState?.toUpperCase();
+      
+      if (aIsUserState && !bIsUserState) return -1;
+      if (!aIsUserState && bIsUserState) return 1;
+      return 0;
+    });
+    
+    setSortedLocations(sorted);
+  }, [trial.locations, userState]);
 
   // Get the status color
   const getStatusColor = () => {
@@ -225,18 +333,6 @@ const MatchCard: React.FC<TrialCardProps> = ({ trial, userState }) => {
         return 'bg-purple-500/20 text-purple-400 border-purple-400/30';
     }
   };
-
-  // Sort locations by proximity to user state
-  const sortedLocations = trial.locations.sort((a, b) => {
-    if (!userState) return 0;
-    
-    const aIsLocal = a.state.toLowerCase() === userState.toLowerCase();
-    const bIsLocal = b.state.toLowerCase() === userState.toLowerCase();
-    
-    if (aIsLocal && !bIsLocal) return -1;
-    if (!aIsLocal && bIsLocal) return 1;
-    return 0;
-  });
 
   // Get primary location (preferably in user's state)
   const primaryLocation = sortedLocations[0];
@@ -285,10 +381,10 @@ const MatchCard: React.FC<TrialCardProps> = ({ trial, userState }) => {
         </div>
 
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => setExpanded(!expanded)}
           className="glass-button p-2 ml-2"
         >
-          {isExpanded ? <FaChevronUp className="w-4 h-4" /> : <FaChevronDown className="w-4 h-4" />}
+          {expanded ? <FaChevronUp className="w-4 h-4" /> : <FaChevronDown className="w-4 h-4" />}
         </button>
       </div>
 
@@ -338,7 +434,7 @@ const MatchCard: React.FC<TrialCardProps> = ({ trial, userState }) => {
 
       {/* Expanded Content */}
       <AnimatePresence>
-        {isExpanded && (
+        {expanded && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -394,31 +490,18 @@ const MatchCard: React.FC<TrialCardProps> = ({ trial, userState }) => {
                 <h4 className="text-white font-medium mb-3 flex items-center gap-2">
                   <FaHospitalAlt className="w-4 h-4 text-blue-400" />
                   All Study Locations ({trial.locations.length})
-                  <button
-                    onClick={() => setShowMap(!showMap)}
-                    className={`ml-2 px-3 py-1 rounded text-xs transition-colors ${
-                      showMap 
-                        ? 'bg-blue-500/30 text-blue-300 border border-blue-400/30' 
-                        : 'bg-slate-700/50 text-blue-400 border border-blue-400/20 hover:bg-blue-500/20'
-                    }`}
-                  >
-                    <FaMap className="w-3 h-3 inline mr-1" />
-                    {showMap ? 'Hide Map' : 'Show Map'}
-                  </button>
                 </h4>
 
                 {/* Map View */}
                 <AnimatePresence>
-                  {showMap && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mb-4"
-                    >
-                      <TrialMiniMap locations={trial.locations} trialTitle={trial.title} />
-                    </motion.div>
-                  )}
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-4"
+                  >
+                    <TrialMiniMap locations={trial.locations} trialTitle={trial.title} />
+                  </motion.div>
                 </AnimatePresence>
 
                 {/* Location List */}

@@ -77,9 +77,9 @@ class ApiClient {
   // Trial matching
   async matchTrials(userProfile: any): Promise<ApiResponse> {
     return this.request('/match', {
-      method: 'POST',
+        method: 'POST',
       body: JSON.stringify(userProfile),
-    });
+      });
   }
 
   // Get trial by ID
@@ -122,7 +122,7 @@ export async function withRetry<T>(
       // Don't retry on client errors (4xx)
       if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
         throw error;
-      }
+}
 
       // Exponential backoff
       const waitTime = delay * Math.pow(2, attempt - 1);

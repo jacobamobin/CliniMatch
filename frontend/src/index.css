@@ -2,34 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Glassmorphism utility classes */
+/* Modern glassmorphism utility classes */
 @layer components {
   .glass {
-    @apply bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl;
+    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-700/30 shadow-2xl;
   }
   
   .glass-dark {
-    @apply bg-slate-900/20 backdrop-blur-lg border border-blue-400/20 shadow-2xl;
+    @apply bg-slate-900/60 backdrop-blur-xl border border-slate-600/40 shadow-2xl;
   }
   
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg;
+    @apply bg-slate-900/30 backdrop-blur-lg border border-slate-700/20 rounded-2xl shadow-xl;
   }
   
   .glass-card-dark {
-    @apply bg-slate-800/30 backdrop-blur-md border border-blue-400/30 rounded-2xl shadow-xl;
+    @apply bg-slate-900/50 backdrop-blur-lg border border-slate-600/30 rounded-2xl shadow-2xl;
   }
   
   .glass-button {
-    @apply bg-blue-600/20 backdrop-blur-sm border border-blue-400/30 rounded-lg px-6 py-3 text-white font-medium transition-all duration-200 hover:bg-blue-600/30 hover:border-blue-400/50 hover:shadow-lg;
+    @apply bg-blue-600/80 backdrop-blur-sm border border-blue-500/50 rounded-lg px-6 py-3 text-white font-medium transition-all duration-200 hover:bg-blue-600/90 hover:border-blue-400/70 hover:shadow-xl;
   }
   
   .glass-input {
-    @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent;
+    @apply bg-slate-900/50 backdrop-blur-md border border-slate-600/40 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50;
   }
   
   .glass-input-dark {
-    @apply bg-slate-800/50 backdrop-blur-sm border border-blue-400/30 rounded-lg px-4 py-3 text-white placeholder-blue-300/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent;
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:border-blue-500/60;
   }
 }
 
@@ -103,8 +103,49 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  background: #0f172a;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Modern gradient background with blurred circles */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  filter: blur(0.5px);
+}
+
+/* Additional floating gradient circles */
+body::after {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 30% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+  filter: blur(1px);
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(30px, -30px) rotate(120deg); }
+  66% { transform: translate(-20px, 20px) rotate(240deg); }
 }
 
 code {
